@@ -1,0 +1,197 @@
+<script>
+  state.feedbackShown = false;
+  state.feedbackLoading = false;
+
+  /**
+   * 답을 고르면 즉시 서버에 최초 선택을 저장하고 정답·해설을 받아옵니다.
+   * 피드백이 나온 뒤에만 다음 문항으로 이동할 수 있습니다.
+   */
+  function chooseAnswer(choice) {
+    if (state.feedbackLoading || state.feedbackShown) return;
+
+    const currentQuestion = state.questions[state.currentIndex];
+    if (!currentQuestion) return;
+
+    state.selectedChoice = choice;
+    state.answers[currentQuestion.id] = choice;
+    state.feedbackLoading = true;
+
+    setSelectedAnswer_(choice);
+    setAnswerButtonsDisabled_(true);
+    el('nextButton').disabled = true;
+    showFeedbackLoading_();
+
+    google.script.run
+      .withSuccessHandler(feedback => {
+        state.feedbackLoading = false;
+        state.feedbackShown = true;
+        state.selectedChoice = feedback.selected;
+        state.answers[currentQuestion.id] = feedback.selected;
+
+        setSelectedAnswer_(feedback.selected);
+        renderImmediateFeedback_(feedback);
+        el('nextButton').disabled = false;
+        el('nextButton').focus();
+      })
+      .withFailureHandler(error => {
+        state.feedbackLoading = false;
+        state.feedbackShown = false;
+        state.selectedChoice = null;
+        delete state.answers[currentQuestion.id];
+
+        resetAnswerButtons_();
+        hideImmediateFeedback_();
+        handleError(error);
+      })
+      .checkAnswer(state.attemptId, currentQuestion.id, choice);
+  }
+
+  function handleNext() {
+    if (!state.feedbackShown || state.feedbackLoading) return;
+
+    if (state.currentIndex >= state.questions.length - 1) {
+      submitQuiz();
+      return;
+    }
+
+    state.currentIndex += 1;
+    renderQuestion();
+  }
+
+  function submitQuiz() {
+    stopTimer();
+    setLoading(true, '항해 기록을 계산하는 중', '처음 선택한 답을 기준으로 점수와 순위를 저장하고 있어요.');
+
+    google.script.run
+      .withSuccessHandler(result => {
+        state.leaderboard = result.leaderboard || [];
+        renderLeaderboard(state.leaderboard);
+        renderResult(result);
+        showView('result');
+        setLoading(false);
+        window.scrollTo({
+          top: document.querySelector('.main-grid').offsetTop - 10,
+          behavior: 'smooth'
+        });
+      })
+      .withFailureHandler(error => {
+        startTimer();
+        handleError(error);
+      })
+      .submitFeedbackAttempt(state.attemptId);
+  }
+
+  function renderQuestion() {
+    const question = state.questions[state.currentIndex];
+    const number = state.currentIndex + 1;
+    const percent = (number / state.questions.length) * 100;
+
+    state.selectedChoice = null;
+    state.feedbackShown = false;
+    state.feedbackLoading = false;
+
+    el('topicPill').textContent = question.topic;
+    el('datePill').textContent = question.dateLabel;
+    el('stageTitle').textContent = question.stageTitle;
+    el('questionNumber').textContent = `QUESTION ${String(number).padStart(2, '0')}`;
+    el('questionText').textContent = question.statement;
+    el('progressText').textContent = `${number} / ${state.questions.length}`;
+    el('nicknameBadge').textContent = `항해자 · ${state.nickname}`;
+    el('progressBar').style.width = `${percent}%`;
+
+    resetAnswerButtons_();
+    hideImmediateFeedback_();
+
+    el('nextButton').disabled = true;
+    el('nextButton').textContent = number === state.questions.length
+      ? '결과 확인하기 ✦'
+      : '다음 파도 →';
+
+    updateJourneyTrack(question.stage);
+  }
+
+  function showFeedbackLoading_() {
+    const panel = el('answerFeedback');
+    panel.hidden = false;
+    panel.className = 'answer-feedback loading';
+
+    el('feedbackIcon').innerHTML = '<span class="feedback-wait" aria-hidden="true"></span>';
+    el('feedbackTitle').textContent = '근거를 확인하고 있어요';
+    el('feedbackAnswer').textContent = '선택한 답을 서버에 기록하는 중입니다.';
+    el('feedbackExplanation').textContent = '';
+    el('feedbackSource').hidden = true;
+  }
+
+  function renderImmediateFeedback_(feedback) {
+    const panel = el('answerFeedback');
+    panel.hidden = false;
+    panel.className = `answer-feedback ${feedback.isCorrect ? 'correct' : 'wrong'}`;
+
+    const correctLabel = formatOX(feedback.correctAnswer);
+    const selectedLabel = formatOX(feedback.selected);
+
+    el('feedbackIcon').textContent = feedback.isCorrect ? '✓' : '!';
+    el('feedbackTitle').textContent = feedback.isCorrect
+      ? '정답이에요!'
+      : `아쉬워요. 정답은 ${correctLabel}예요.`;
+    el('feedbackAnswer').textContent = feedback.isCorrect
+      ? `내 선택 ${selectedLabel} · 정확하게 판단했어요.`
+      : `내 선택 ${selectedLabel} · 정답 ${correctLabel}`;
+    el('feedbackExplanation').textContent = feedback.explanation;
+
+    const source = el('feedbackSource');
+    source.href = feedback.sourceUrl;
+    source.textContent = `🔎 ${feedback.sourceName}`;
+    source.hidden = false;
+
+    revealCorrectAnswer_(feedback);
+  }
+
+  function revealCorrectAnswer_(feedback) {
+    const answerO = el('answerO');
+    const answerX = el('answerX');
+    const selectedButton = feedback.selected ? answerO : answerX;
+    const correctButton = feedback.correctAnswer ? answerO : answerX;
+
+    answerO.classList.remove('feedback-correct', 'feedback-wrong');
+    answerX.classList.remove('feedback-correct', 'feedback-wrong');
+
+    correctButton.classList.add('feedback-correct');
+    if (!feedback.isCorrect) selectedButton.classList.add('feedback-wrong');
+  }
+
+  function setSelectedAnswer_(choice) {
+    el('answerO').classList.toggle('selected', choice === true);
+    el('answerX').classList.toggle('selected', choice === false);
+    el('answerO').setAttribute('aria-pressed', String(choice === true));
+    el('answerX').setAttribute('aria-pressed', String(choice === false));
+  }
+
+  function setAnswerButtonsDisabled_(disabled) {
+    el('answerO').disabled = disabled;
+    el('answerX').disabled = disabled;
+  }
+
+  function resetAnswerButtons_() {
+    const answerO = el('answerO');
+    const answerX = el('answerX');
+
+    [answerO, answerX].forEach(button => {
+      button.disabled = false;
+      button.classList.remove('selected', 'feedback-correct', 'feedback-wrong');
+      button.setAttribute('aria-pressed', 'false');
+    });
+  }
+
+  function hideImmediateFeedback_() {
+    const panel = el('answerFeedback');
+    panel.hidden = true;
+    panel.className = 'answer-feedback';
+    el('feedbackIcon').textContent = '';
+    el('feedbackTitle').textContent = '';
+    el('feedbackAnswer').textContent = '';
+    el('feedbackExplanation').textContent = '';
+    el('feedbackSource').hidden = true;
+    el('feedbackSource').removeAttribute('href');
+  }
+</script>
