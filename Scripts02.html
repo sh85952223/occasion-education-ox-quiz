@@ -1,0 +1,215 @@
+<script>
+function renderResult(result) {
+      const title = getResultTitle(result.score);
+      el('scoreText').textContent = `${result.score}/${result.total}`;
+      el('accuracyText').textContent = `${result.accuracy}%`;
+      el('elapsedText').textContent = formatTime(result.elapsedSec);
+      el('rankText').textContent = result.myRank ? `${result.myRank}위` : '20위 밖';
+      el('resultTitle').textContent = title.title;
+      el('resultDesc').textContent = `${result.nickname} 항해자, ${title.message}`;
+
+      const reviewList = el('reviewList');
+      reviewList.innerHTML = '';
+
+      result.review.forEach((item, index) => {
+        const detail = document.createElement('details');
+        detail.className = 'review-item';
+
+        const summary = document.createElement('summary');
+
+        const mark = document.createElement('span');
+        mark.className = `result-mark ${item.isCorrect ? 'correct' : 'wrong'}`;
+        mark.textContent = item.isCorrect ? '✓' : '!';
+
+        const statement = document.createElement('span');
+        statement.textContent = `${index + 1}. ${item.statement}`;
+
+        const answers = document.createElement('span');
+        answers.className = 'review-answer';
+        answers.textContent = `나 ${formatOX(item.selected)} · 정답 ${formatOX(item.correctAnswer)}`;
+
+        summary.append(mark, statement, answers);
+
+        const body = document.createElement('div');
+        body.className = 'review-body';
+
+        const explanation = document.createElement('p');
+        explanation.textContent = item.explanation;
+
+        const source = document.createElement('a');
+        source.className = 'source-link';
+        source.href = item.sourceUrl;
+        source.target = '_blank';
+        source.rel = 'noopener noreferrer';
+        source.textContent = `🔎 ${item.sourceName}`;
+
+        body.append(explanation, source);
+        detail.append(summary, body);
+        reviewList.appendChild(detail);
+      });
+    }
+
+    function renderLeaderboard(items) {
+      const podium = el('podium');
+      const list = el('rankList');
+      const empty = el('rankEmpty');
+
+      podium.innerHTML = '';
+      list.innerHTML = '';
+
+      if (!items || items.length === 0) {
+        podium.hidden = true;
+        empty.hidden = false;
+        return;
+      }
+
+      empty.hidden = true;
+      const top = items.slice(0, 3);
+      const podiumOrder = [top[1], top[0], top[2]].filter(Boolean);
+
+      podiumOrder.forEach(item => {
+        const card = document.createElement('div');
+        card.className = `podium-card rank-${item.rank}`;
+
+        const medal = document.createElement('div');
+        medal.className = 'podium-medal';
+        medal.textContent = item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : '🥉';
+
+        const name = document.createElement('div');
+        name.className = 'podium-name';
+        name.textContent = item.nickname;
+        name.title = item.nickname;
+
+        const score = document.createElement('div');
+        score.className = 'podium-score';
+        score.textContent = `${item.score}점 · ${formatTime(item.elapsedSec)}`;
+
+        card.append(medal, name, score);
+        podium.appendChild(card);
+      });
+      podium.hidden = false;
+
+      items.slice(3).forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'rank-row';
+
+        const rank = document.createElement('div');
+        rank.className = 'rank-num';
+        rank.textContent = item.rank;
+
+        const name = document.createElement('div');
+        name.className = 'rank-name';
+        name.textContent = item.nickname;
+        name.title = item.nickname;
+
+        const score = document.createElement('div');
+        score.className = 'rank-score';
+        score.textContent = `${item.score}점 · ${formatTime(item.elapsedSec)}`;
+
+        row.append(rank, name, score);
+        list.appendChild(row);
+      });
+    }
+
+    function refreshLeaderboard() {
+      el('refreshRankButton').disabled = true;
+      google.script.run
+        .withSuccessHandler(items => {
+          state.leaderboard = items || [];
+          renderLeaderboard(state.leaderboard);
+          el('refreshRankButton').disabled = false;
+          showToast('순위표를 새로 불러왔어요.');
+        })
+        .withFailureHandler(error => {
+          el('refreshRankButton').disabled = false;
+          handleError(error);
+        })
+        .getLeaderboard();
+    }
+
+    function startTimer() {
+      stopTimer();
+      if (!state.startedAtLocal) state.startedAtLocal = new Date();
+      updateTimer();
+      state.timerId = window.setInterval(updateTimer, 1000);
+    }
+
+    function stopTimer() {
+      if (state.timerId) {
+        window.clearInterval(state.timerId);
+        state.timerId = null;
+      }
+    }
+
+    function updateTimer() {
+      if (!state.startedAtLocal) return;
+      const elapsed = Math.max(0, Math.floor((Date.now() - state.startedAtLocal.getTime()) / 1000));
+      el('timerText').textContent = formatTime(elapsed);
+    }
+
+    function formatTime(seconds) {
+      const safe = Math.max(0, Number(seconds) || 0);
+      const minutes = Math.floor(safe / 60);
+      const secs = Math.floor(safe % 60);
+      return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function formatOX(value) {
+      if (value === true) return 'O';
+      if (value === false) return 'X';
+      return '미응답';
+    }
+
+    function getResultTitle(score) {
+      if (score === 30) return { title: '별빛 만점 항해자', message: '30개의 파도를 모두 정확히 건넜어요. 이제 근거까지 설명할 수 있는 항해자가 되었네요!' };
+      if (score >= 27) return { title: '기억의 바다 탐험가', message: '역사의 흐름과 기념일의 의미를 아주 탄탄하게 이해하고 있어요.' };
+      if (score >= 23) return { title: '민주주의 길잡이', message: '중요한 흐름을 잘 잡았습니다. 틀린 문항의 출처를 확인하면 더 단단해져요.' };
+      if (score >= 18) return { title: '성장하는 항해자', message: '좋은 출발이에요. 해설을 따라가며 사건 사이의 연결을 찾아보세요.' };
+      return { title: '다시 떠날 준비 완료', message: '점수는 출발점일 뿐이에요. 해설과 공식 출처를 살펴본 뒤 다시 도전해 보세요.' };
+    }
+
+    function resetToIntro() {
+      stopTimer();
+      state.questions = [];
+      state.answers = {};
+      state.currentIndex = 0;
+      state.selectedChoice = null;
+      state.attemptId = '';
+      state.startedAtLocal = null;
+      showView('intro');
+      el('nicknameInput').focus();
+      window.scrollTo({ top: document.querySelector('.main-grid').offsetTop - 10, behavior: 'smooth' });
+    }
+
+    function showView(view) {
+      el('introView').hidden = view !== 'intro';
+      el('quizView').hidden = view !== 'quiz';
+      el('resultView').hidden = view !== 'result';
+    }
+
+    function setLoading(show, title = '', message = '') {
+      el('loadingOverlay').hidden = !show;
+      if (show) {
+        el('loadingTitle').textContent = title || '잠시만 기다려 주세요';
+        el('loadingMessage').textContent = message || '별빛 항로를 준비하고 있어요.';
+      }
+    }
+
+    function handleError(error) {
+      setLoading(false);
+      const message = error && error.message
+        ? error.message
+        : '처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+      showToast(message, 5000);
+      console.error(error);
+    }
+
+    let toastTimer = null;
+    function showToast(message, duration = 3000) {
+      const toast = el('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => toast.classList.remove('show'), duration);
+    }
+</script>
