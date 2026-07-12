@@ -10,6 +10,7 @@
   <?!= include('Styles01'); ?>
   <?!= include('Styles02'); ?>
   <?!= include('Styles03'); ?>
+  <?!= include('FeedbackStyles'); ?>
 </head>
 <body>
   <a class="skip-link" href="#mainContent">본문으로 이동</a>
@@ -20,53 +21,13 @@
       <div>
         <div class="eyebrow">🧭 근거로 항해하는 계기교육</div>
         <h1>기억의 바다,<br>우리들의 여정</h1>
-        <p>독립·민주주의·인권·헌법·한글의 의미를 30개의 OX 파도로 만나 보세요. 정답보다 중요한 것은 “왜 그런가”를 확인하는 일입니다.</p>
+        <p>독립·민주주의·인권·헌법·한글의 의미를 30개의 OX 파도로 만나 보세요. 답을 고를 때마다 정답과 근거를 바로 확인할 수 있습니다.</p>
         <div class="hero-badges" aria-label="사이트 특징">
           <span>OX 30문항</span>
+          <span>문항별 즉시 피드백</span>
           <span>공식 출처 수록</span>
           <span>별명 순위표</span>
-          <span>개인정보 최소 수집</span>
         </div>
-      </div>
-
-      <div class="whale-wrap" aria-hidden="true">
-        <span class="bubble b1"></span>
-        <span class="bubble b2"></span>
-        <span class="bubble b3"></span>
-        <svg class="whale" viewBox="0 0 260 150" role="img" aria-label="별빛 고래 일러스트">
-          <defs>
-            <linearGradient id="whaleBody" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#b9d9ff"/>
-              <stop offset=".55" stop-color="#9cbcf5"/>
-              <stop offset="1" stop-color="#8e79cf"/>
-            </linearGradient>
-            <linearGradient id="whaleBelly" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#ffffff" stop-opacity=".92"/>
-              <stop offset="1" stop-color="#dfeaff" stop-opacity=".78"/>
-            </linearGradient>
-          </defs>
-          <path d="M70 49 C92 15 160 10 205 41 C228 57 233 81 216 100 C195 124 150 132 111 121 C82 113 61 96 57 75 C54 64 59 56 70 49Z" fill="url(#whaleBody)"/>
-          <path d="M199 44 C220 21 241 19 251 30 C236 34 231 43 229 55 C241 51 252 56 258 67 C242 70 228 66 215 56Z" fill="#8f79ca"/>
-          <path d="M94 113 C73 131 55 132 43 122 C58 116 65 106 65 94Z" fill="#94b8ef"/>
-          <path d="M84 63 C116 87 169 100 218 78 C213 100 189 114 153 119 C121 123 91 112 73 93 C63 82 64 68 70 55Z" fill="url(#whaleBelly)" opacity=".82"/>
-          <path d="M105 76 C130 87 164 92 190 86" fill="none" stroke="#839edb" stroke-width="2" stroke-linecap="round" opacity=".65"/>
-          <path d="M104 83 C129 94 160 98 184 93" fill="none" stroke="#839edb" stroke-width="1.7" stroke-linecap="round" opacity=".48"/>
-          <circle cx="94" cy="57" r="4" fill="#4d4778"/>
-          <circle cx="95.2" cy="55.8" r="1.1" fill="#fff"/>
-          <path d="M82 69 C88 73 94 73 99 69" fill="none" stroke="#5f558e" stroke-width="2.2" stroke-linecap="round"/>
-          <path d="M121 48 C132 37 146 34 159 37" fill="none" stroke="#d9e8ff" stroke-width="2" stroke-linecap="round" opacity=".8"/>
-          <g fill="#fff8cf">
-            <circle cx="132" cy="50" r="2.2"/>
-            <circle cx="151" cy="62" r="1.6"/>
-            <circle cx="172" cy="48" r="1.9"/>
-            <circle cx="184" cy="67" r="1.4"/>
-            <path d="M160 35 l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z"/>
-          </g>
-          <path d="M106 37 C101 27 105 18 112 12" fill="none" stroke="#8abbe9" stroke-width="4" stroke-linecap="round"/>
-          <path d="M114 37 C117 25 125 19 134 18" fill="none" stroke="#8abbe9" stroke-width="4" stroke-linecap="round"/>
-          <circle cx="109" cy="8" r="5" fill="#d9efff" opacity=".86"/>
-          <circle cx="136" cy="14" r="3.5" fill="#d9efff" opacity=".82"/>
-        </svg>
       </div>
     </header>
 
@@ -75,7 +36,7 @@
         <section id="introView" class="view">
           <p class="section-label">🌊 출항 준비</p>
           <h2 class="section-title">별명을 정하고<br>기억의 바다로 떠나요</h2>
-          <p class="section-desc">문항은 매번 섞여서 출제됩니다. 점수가 같으면 더 빠르게 완주한 사람이 앞섭니다. 순위에는 각 별명의 최고 기록만 남습니다.</p>
+          <p class="section-desc">각 답을 선택하면 정답 여부와 해설이 바로 나타납니다. 점수가 같으면 더 빠르게 완주한 사람이 앞서며, 순위에는 각 별명의 최고 기록만 남습니다.</p>
 
           <form id="nicknameForm" class="nickname-form">
             <label for="nicknameInput">순위표에 표시할 별명</label>
@@ -128,15 +89,25 @@
           </article>
 
           <div class="answer-grid" role="group" aria-label="OX 답 선택">
-            <button id="answerO" class="answer-btn o" type="button" data-choice="true">
+            <button id="answerO" class="answer-btn o" type="button" data-choice="true" aria-pressed="false">
               <span class="symbol">O</span>
               <span class="label">맞다</span>
             </button>
-            <button id="answerX" class="answer-btn x" type="button" data-choice="false">
+            <button id="answerX" class="answer-btn x" type="button" data-choice="false" aria-pressed="false">
               <span class="symbol">X</span>
               <span class="label">아니다</span>
             </button>
           </div>
+
+          <section id="answerFeedback" class="answer-feedback" aria-live="polite" hidden>
+            <div id="feedbackIcon" class="feedback-icon" aria-hidden="true"></div>
+            <div class="feedback-content">
+              <strong id="feedbackTitle" class="feedback-title"></strong>
+              <p id="feedbackAnswer" class="feedback-answer"></p>
+              <p id="feedbackExplanation" class="feedback-explanation"></p>
+              <a id="feedbackSource" class="feedback-source" target="_blank" rel="noopener noreferrer" hidden></a>
+            </div>
+          </section>
 
           <div class="quiz-actions">
             <button id="nextButton" class="next-btn" type="button" disabled>다음 파도 →</button>
@@ -170,8 +141,8 @@
 
           <div class="review-header">
             <div>
-              <p class="section-label">📚 근거 확인</p>
-              <h3 class="section-title" style="font-size:30px">정답 해설과 출처</h3>
+              <p class="section-label">📚 근거 다시 보기</p>
+              <h3 class="section-title" style="font-size:30px">전체 정답과 출처</h3>
             </div>
           </div>
           <div id="reviewList" class="review-list"></div>
@@ -196,7 +167,7 @@
 
     <footer class="footer">
       이 퀴즈는 공식 기관의 공개 자료를 바탕으로 구성되었습니다.<br>
-      순위 산정: 점수 내림차순 → 소요 시간 오름차순 → 먼저 제출한 기록. 별명별 최고 기록만 표시합니다.
+      순위 산정: 점수 내림차순 → 소요 시간 오름차순 → 먼저 제출한 기록. 각 문항의 최초 선택을 점수에 반영합니다.
     </footer>
   </div>
 
@@ -213,5 +184,6 @@
   <script>window.PUBLIC_CONFIG = <?!= publicConfig ?>;</script>
   <?!= include('Scripts01'); ?>
   <?!= include('Scripts02'); ?>
+  <?!= include('FeedbackScripts'); ?>
 </body>
 </html>
