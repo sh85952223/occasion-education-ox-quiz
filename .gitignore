@@ -1,0 +1,8 @@
+# Local clasp project binding
+.clasp.json
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
