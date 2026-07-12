@@ -19,23 +19,69 @@ Google Apps Script를 웹 서버로, Google Sheets를 무료 응답 저장소로
 
 ---
 
-## 1. 설치
+## 1. Apps Script에 넣을 파일
+
+Apps Script 편집기에는 아래 `.gs`와 `.html` 파일만 추가하면 됩니다.
+
+### 스크립트 파일로 추가
+
+왼쪽 `파일` 옆 `+` → `스크립트`를 눌러 아래 이름으로 만듭니다. 이름 입력 시 `.gs`는 생략해도 됩니다.
+
+- `Code.gs`
+- `Questions.gs`
+- `Questions_01_05.gs`
+- `Questions_06_10.gs`
+
+### HTML 파일로 추가
+
+왼쪽 `파일` 옆 `+` → `HTML`을 눌러 아래 이름으로 만듭니다. 이름 입력 시 `.html`은 생략해도 됩니다.
+
+- `Index.html`
+- `Styles01.html`
+- `Styles02.html`
+- `Styles03.html`
+- `Scripts01.html`
+- `Scripts02.html`
+
+각 파일은 GitHub의 같은 이름 파일을 열어 전체 내용을 복사한 뒤 Apps Script의 같은 이름 파일에 붙여넣습니다.
+
+### Apps Script에 넣지 않는 파일
+
+다음 파일은 GitHub에서 관리·검토하기 위한 문서이므로 Apps Script에 등록하지 않습니다.
+
+- `quiz_questions_audit.csv`: 30문항 정답·해설·출처 검토표
+- `README.md`: 설치 설명서
+- `SOURCES.md`: 공식 출처 목록
+- `.gitignore`: Git 관리 설정
+
+### `appsscript.json` 처리
+
+`appsscript.json`은 일반 파일 추가 메뉴로 만드는 파일이 아니라 Apps Script가 자동으로 생성하는 프로젝트 매니페스트입니다.
+
+가장 간단한 방법은 수정하지 않고 그대로 두는 것입니다. 이 프로젝트는 별도의 고급 서비스나 외부 라이브러리를 요구하지 않습니다.
+
+저장소 값과 동일하게 맞추고 싶다면:
+
+1. 왼쪽 아래 `프로젝트 설정`을 엽니다.
+2. `편집기에 appsscript.json 매니페스트 파일 표시`를 켭니다.
+3. 파일 목록에 나타난 `appsscript.json`을 열어 저장소 내용을 붙여넣습니다.
+
+---
+
+## 2. 최초 설정
 
 1. 브라우저에서 `script.new`를 엽니다.
-2. 저장소의 모든 `.gs` 파일을 같은 이름으로 Apps Script 프로젝트에 추가합니다.
-3. 저장소의 `Index.html`, `Styles01.html`~`Styles03.html`, `Scripts01.html`~`Scripts02.html`을 같은 이름으로 추가합니다.
-4. 프로젝트 설정에서 매니페스트 표시를 켠 뒤 `appsscript.json` 내용을 교체합니다.
-5. 함수 선택 메뉴에서 `setupQuizProject`를 선택하고 **실행**합니다.
-6. Google 권한을 승인합니다.
-7. 화면 아래 `실행 로그`에 출력된 Google Sheets 주소를 열어 저장 위치를 확인합니다.
-
-파일 수가 많으므로 익숙한 경우 Google `clasp`로 저장소를 연결해 한 번에 업로드하는 방식을 권장합니다.
+2. 위 목록의 `.gs` 파일 4개와 `.html` 파일 6개를 같은 이름으로 추가합니다.
+3. 각 GitHub 파일의 전체 내용을 대응하는 Apps Script 파일에 붙여넣고 저장합니다.
+4. 상단 함수 선택 메뉴에서 `setupQuizProject`를 선택합니다.
+5. `실행`을 누르고 Google 권한을 승인합니다.
+6. 화면 아래 `실행 로그`에 출력된 Google Sheets 주소를 엽니다.
 
 > `setupQuizProject()`를 다시 실행해도 기존 응답은 삭제되지 않습니다. 이미 연결된 스프레드시트를 확인하고 누락된 시트만 보완합니다.
 
 ---
 
-## 2. 공개 배포
+## 3. 공개 배포
 
 1. Apps Script 오른쪽 위 `배포` → `새 배포`
 2. 유형: `웹 앱`
@@ -48,7 +94,7 @@ Google Apps Script를 웹 서버로, Google Sheets를 무료 응답 저장소로
 
 ---
 
-## 3. Google Sites에 넣기
+## 4. Google Sites에 넣기
 
 1. Google Sites 편집 화면에서 `삽입` → `삽입`
 2. `URL` 탭에 Apps Script 웹앱의 `/exec` 주소 입력
@@ -59,7 +105,7 @@ Google Apps Script를 웹 서버로, Google Sheets를 무료 응답 저장소로
 
 ---
 
-## 4. 순위 규칙
+## 5. 순위 규칙
 
 1. 점수가 높은 기록
 2. 점수가 같으면 소요시간이 짧은 기록
@@ -70,7 +116,7 @@ Google Apps Script를 웹 서버로, Google Sheets를 무료 응답 저장소로
 
 ---
 
-## 5. 새 학기·새 대회 라운드 만들기
+## 6. 새 학기·새 대회 라운드 만들기
 
 `Code.gs` 위쪽의 아래 값을 바꿉니다.
 
@@ -82,7 +128,7 @@ QUIZ_VERSION: '2026-계기교육-02'
 
 ---
 
-## 6. 스프레드시트 구조
+## 7. 스프레드시트 구조
 
 ### 응답
 - 제출시각
@@ -102,7 +148,7 @@ QUIZ_VERSION: '2026-계기교육-02'
 
 ---
 
-## 7. 개인정보와 운영 유의사항
+## 8. 개인정보와 운영 유의사항
 
 - 학생에게 **실명·학번·전화번호를 별명에 넣지 않도록** 안내하세요.
 - 공개 사이트이므로 부적절한 별명이나 반복 제출이 생길 수 있습니다.
@@ -113,7 +159,7 @@ QUIZ_VERSION: '2026-계기교육-02'
 
 ---
 
-## 8. 문항 수정 원칙
+## 9. 문항 수정 원칙
 
 문항은 `Questions_01_05.gs`와 `Questions_06_10.gs`에 나누어 들어 있습니다. `Questions.gs`는 두 파일을 합쳐 전체 문항을 반환합니다.
 
@@ -128,7 +174,7 @@ QUIZ_VERSION: '2026-계기교육-02'
 
 ---
 
-## 9. 현재 문항 구성
+## 10. 현재 문항 구성
 
 | 항해 | 주제 | 문항 |
 |---|---|---:|
