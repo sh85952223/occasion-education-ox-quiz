@@ -1,0 +1,223 @@
+<script>
+const PUBLIC_CONFIG = window.PUBLIC_CONFIG;
+
+    const state = {
+      stages: [],
+      questions: [],
+      answers: {},
+      currentIndex: 0,
+      selectedChoice: null,
+      attemptId: '',
+      nickname: '',
+      startedAtLocal: null,
+      timerId: null,
+      leaderboard: []
+    };
+
+    const el = id => document.getElementById(id);
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    function init() {
+      bindEvents();
+      setLoading(true, '사이트를 여는 중', '공식 출처와 순위표를 확인하고 있어요.');
+
+      google.script.run
+        .withSuccessHandler(data => {
+          state.stages = data.stages || [];
+          state.leaderboard = data.leaderboard || [];
+          renderJourneyPreview();
+          renderLeaderboard(state.leaderboard);
+          setLoading(false);
+        })
+        .withFailureHandler(handleError)
+        .getInitialData();
+    }
+
+    function bindEvents() {
+      el('nicknameForm').addEventListener('submit', handleStart);
+      el('answerO').addEventListener('click', () => chooseAnswer(true));
+      el('answerX').addEventListener('click', () => chooseAnswer(false));
+      el('nextButton').addEventListener('click', handleNext);
+      el('retryButton').addEventListener('click', resetToIntro);
+      el('scrollRankButton').addEventListener('click', () => el('rankingPanel').scrollIntoView({ behavior: 'smooth' }));
+      el('refreshRankButton').addEventListener('click', refreshLeaderboard);
+    }
+
+    function handleStart(event) {
+      event.preventDefault();
+      const nickname = el('nicknameInput').value.trim();
+
+      if (nickname.length < 2) {
+        showToast('별명을 2자 이상 입력해 주세요.');
+        el('nicknameInput').focus();
+        return;
+      }
+
+      setLoading(true, '항로를 만드는 중', '30개의 문항을 섞고 있어요.');
+
+      google.script.run
+        .withSuccessHandler(data => {
+          state.questions = data.questions;
+          state.stages = data.stages;
+          state.answers = {};
+          state.currentIndex = 0;
+          state.selectedChoice = null;
+          state.attemptId = data.attemptId;
+          state.nickname = data.nickname;
+          state.startedAtLocal = new Date();
+
+          showView('quiz');
+          renderJourneyTrack();
+          renderQuestion();
+          startTimer();
+          setLoading(false);
+          window.scrollTo({ top: document.querySelector('.main-grid').offsetTop - 10, behavior: 'smooth' });
+        })
+        .withFailureHandler(handleError)
+        .startAttempt(nickname);
+    }
+
+    function chooseAnswer(choice) {
+      state.selectedChoice = choice;
+      const currentQuestion = state.questions[state.currentIndex];
+      state.answers[currentQuestion.id] = choice;
+
+      el('answerO').classList.toggle('selected', choice === true);
+      el('answerX').classList.toggle('selected', choice === false);
+      el('answerO').setAttribute('aria-pressed', String(choice === true));
+      el('answerX').setAttribute('aria-pressed', String(choice === false));
+      el('nextButton').disabled = false;
+    }
+
+    function handleNext() {
+      if (state.selectedChoice === null) return;
+
+      if (state.currentIndex >= state.questions.length - 1) {
+        submitQuiz();
+        return;
+      }
+
+      state.currentIndex += 1;
+      state.selectedChoice = Object.prototype.hasOwnProperty.call(
+        state.answers,
+        state.questions[state.currentIndex].id
+      ) ? state.answers[state.questions[state.currentIndex].id] : null;
+
+      renderQuestion();
+    }
+
+    function submitQuiz() {
+      stopTimer();
+      setLoading(true, '항해 기록을 계산하는 중', '점수와 순위를 안전하게 저장하고 있어요.');
+
+      const payload = state.questions.map(q => ({
+        id: q.id,
+        choice: Object.prototype.hasOwnProperty.call(state.answers, q.id)
+          ? state.answers[q.id]
+          : null
+      })).filter(item => typeof item.choice === 'boolean');
+
+      google.script.run
+        .withSuccessHandler(result => {
+          state.leaderboard = result.leaderboard || [];
+          renderLeaderboard(state.leaderboard);
+          renderResult(result);
+          showView('result');
+          setLoading(false);
+          window.scrollTo({ top: document.querySelector('.main-grid').offsetTop - 10, behavior: 'smooth' });
+        })
+        .withFailureHandler(error => {
+          startTimer();
+          handleError(error);
+        })
+        .submitAttempt(state.attemptId, payload);
+    }
+
+    function renderQuestion() {
+      const q = state.questions[state.currentIndex];
+      const number = state.currentIndex + 1;
+      const percent = (number / state.questions.length) * 100;
+
+      el('topicPill').textContent = q.topic;
+      el('datePill').textContent = q.dateLabel;
+      el('stageTitle').textContent = q.stageTitle;
+      el('questionNumber').textContent = `QUESTION ${String(number).padStart(2, '0')}`;
+      el('questionText').textContent = q.statement;
+      el('progressText').textContent = `${number} / ${state.questions.length}`;
+      el('nicknameBadge').textContent = `항해자 · ${state.nickname}`;
+      el('progressBar').style.width = `${percent}%`;
+
+      const existing = Object.prototype.hasOwnProperty.call(state.answers, q.id)
+        ? state.answers[q.id]
+        : null;
+      state.selectedChoice = existing;
+
+      el('answerO').classList.toggle('selected', existing === true);
+      el('answerX').classList.toggle('selected', existing === false);
+      el('answerO').setAttribute('aria-pressed', String(existing === true));
+      el('answerX').setAttribute('aria-pressed', String(existing === false));
+      el('nextButton').disabled = existing === null;
+      el('nextButton').textContent = number === state.questions.length
+        ? '항해 완료하기 ✦'
+        : '다음 파도 →';
+
+      updateJourneyTrack(q.stage);
+      el('questionText').focus?.();
+    }
+
+    function renderJourneyPreview() {
+      const icons = ['🕊️','📜','🌱','🎈','🕯️','🌺','📣','🧭','✨','🔤'];
+      el('journeyPreview').innerHTML = '';
+
+      state.stages.forEach((stage, index) => {
+        const item = document.createElement('div');
+        item.className = 'preview-island';
+
+        const icon = document.createElement('div');
+        icon.className = 'island-icon';
+        icon.textContent = icons[index] || '✦';
+
+        const title = document.createElement('strong');
+        title.textContent = stage.title;
+
+        const date = document.createElement('span');
+        date.textContent = stage.dateLabel;
+
+        item.append(icon, title, date);
+        el('journeyPreview').appendChild(item);
+      });
+    }
+
+    function renderJourneyTrack() {
+      const icons = ['🕊️','📜','🌱','🎈','🕯️','🌺','📣','🧭','✨','🔤'];
+      el('journeyTrack').innerHTML = '';
+
+      state.stages.forEach((stage, index) => {
+        const item = document.createElement('div');
+        item.className = 'stage-dot';
+        item.dataset.stage = stage.stage;
+
+        const dot = document.createElement('div');
+        dot.className = 'dot';
+        dot.textContent = icons[index] || '✦';
+
+        const label = document.createElement('span');
+        label.textContent = stage.dateLabel;
+
+        item.append(dot, label);
+        el('journeyTrack').appendChild(item);
+      });
+    }
+
+    function updateJourneyTrack(currentStage) {
+      document.querySelectorAll('.stage-dot').forEach(node => {
+        const stage = Number(node.dataset.stage);
+        node.classList.toggle('done', stage < currentStage);
+        node.classList.toggle('current', stage === currentStage);
+      });
+
+      const currentNode = document.querySelector(`.stage-dot[data-stage="${currentStage}"]`);
+      currentNode?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+</script>
