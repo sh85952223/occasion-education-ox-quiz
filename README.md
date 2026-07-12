@@ -22,12 +22,14 @@ Google Apps Script를 웹 서버로, Google Sheets를 무료 응답 저장소로
 ## 1. 설치
 
 1. 브라우저에서 `script.new`를 엽니다.
-2. 기본 `Code.gs` 내용을 지우고 이 폴더의 `Code.gs` 전체를 붙여넣습니다.
-3. 왼쪽 `+` → `HTML`을 눌러 파일 이름을 `Index`로 만들고, `Index.html` 전체를 붙여넣습니다.
-4. 프로젝트 설정에서 매니페스트 표시를 켠 뒤 `appsscript.json` 내용도 필요하면 교체합니다.
+2. 저장소의 모든 `.gs` 파일을 같은 이름으로 Apps Script 프로젝트에 추가합니다.
+3. 저장소의 `Index.html`, `Styles01.html`~`Styles03.html`, `Scripts01.html`~`Scripts02.html`을 같은 이름으로 추가합니다.
+4. 프로젝트 설정에서 매니페스트 표시를 켠 뒤 `appsscript.json` 내용을 교체합니다.
 5. 함수 선택 메뉴에서 `setupQuizProject`를 선택하고 **실행**합니다.
 6. Google 권한을 승인합니다.
 7. 화면 아래 `실행 로그`에 출력된 Google Sheets 주소를 열어 저장 위치를 확인합니다.
+
+파일 수가 많으므로 익숙한 경우 Google `clasp`로 저장소를 연결해 한 번에 업로드하는 방식을 권장합니다.
 
 > `setupQuizProject()`를 다시 실행해도 기존 응답은 삭제되지 않습니다. 이미 연결된 스프레드시트를 확인하고 누락된 시트만 보완합니다.
 
@@ -113,7 +115,7 @@ QUIZ_VERSION: '2026-계기교육-02'
 
 ## 8. 문항 수정 원칙
 
-문항은 `Code.gs` 맨 아래 `getQuestionBank_()`에 들어 있습니다.
+문항은 `Questions_01_05.gs`와 `Questions_06_10.gs`에 나누어 들어 있습니다. `Questions.gs`는 두 파일을 합쳐 전체 문항을 반환합니다.
 
 수정할 때 반드시 함께 바꿔야 하는 필드:
 - `statement`: OX 진술
